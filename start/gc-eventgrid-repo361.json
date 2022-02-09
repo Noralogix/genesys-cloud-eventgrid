@@ -13,7 +13,7 @@
     "variables": {
         "eventGridType": "Microsoft.EventGrid/topics",
         "eventgridApiVersion": "2021-06-01-preview",
-        "uniqueId": "[take(uniqueString(resourceGroup().id), 3)]",
+        "uniqueId": "[take(uniqueString(resourceGroup().id), 6)]",
         "eventGridTopicName": "[concat(parameters('projectName'), '-evgt-', variables('uniqueId'))]",
         "logicAppsSubscriptionName": "[concat(parameters('projectName'), '-genesysemails-', variables('uniqueId'))]",
         "logicAppsName": "[concat(parameters('projectName'), '-lapp-', variables('uniqueId'))]",
