@@ -19,4 +19,6 @@ There are five concepts in Azure Event Grid that let you get going:
 # What can a client do with Event Grid?
 Event Grid connects Genesys Cloud notifications and event handlers in Azure.
 
+Initial Azure [deployment](https://github.com/Noralogix/genesyscloud-eventgrid/tree/main/start) 
+
 For more information please contact: [contactus@noralogix.com](mailto:contactus@noralogix.com)

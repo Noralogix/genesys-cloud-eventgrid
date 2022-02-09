@@ -14,4 +14,4 @@ This temlate will create
 
 After deployment go to Outputs and copy EventGrid Endpoint, EventGrid Secret to https://eventgrid.repo361.com/
 
-List of [samples](https://github.com/Noralogix/genesyscloud-eventgrid/samples/)
+List of [samples](https://github.com/Noralogix/genesyscloud-eventgrid/tree/main/samples)
