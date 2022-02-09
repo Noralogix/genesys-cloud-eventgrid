@@ -1,0 +1,268 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "projectName": {
+            "type": "string",
+            "metadata": {
+                "description": "Specify a project name that is used to generate resource names."
+            },
+            "defaultValue": "eventgridrepo361"
+        }
+    },
+    "variables": {
+        "eventGridType": "Microsoft.EventGrid/topics",
+        "eventgridApiVersion": "2021-06-01-preview",
+        "uniqueId": "[take(uniqueString(resourceGroup().id), 3)]",
+        "eventGridTopicName": "[concat(parameters('projectName'), '-evgt-', variables('uniqueId'))]",
+        "logicAppsSubscriptionName": "[concat(parameters('projectName'), '-genesysemails-', variables('uniqueId'))]",
+        "logicAppsName": "[concat(parameters('projectName'), '-lapp-', variables('uniqueId'))]",
+        "logicAppsNameUserIdentityName": "[concat(parameters('projectName'), '-lapp-identity-', variables('uniqueId'))]",
+        "connectionsEventGridName": "[concat(parameters('projectName'), '-connection-', variables('uniqueId'))]",
+        "subscriptionId": "[subscription().subscriptionId]",
+        "resourceGroupName": "[resourceGroup().name]",
+        "location": "[resourceGroup().location]",
+        "targetLogicApp": {
+            "triggerId": "[resourceId('Microsoft.Logic/workflows/triggers', variables('logicAppsName'), 'When_GCEvent_occures')]"
+        }
+    },
+    "resources": [
+        {
+            "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+            "apiVersion": "2018-11-30",
+            "name": "[variables('logicAppsNameUserIdentityName')]",
+            "location": "[variables('location')]"
+        },
+        {
+            "type": "Microsoft.EventGrid/topics",
+            "apiVersion": "2021-06-01-preview",
+            "name": "[variables('eventGridTopicName')]",
+            "location": "[variables('location')]",
+            "identity": {
+                "type": "None"
+            },
+            "properties": {
+                "inputSchema": "EventGridSchema",
+                "publicNetworkAccess": "Enabled",
+                "disableLocalAuth": false
+            }
+        },
+        {
+            "type": "Microsoft.Web/connections",
+            "apiVersion": "2016-06-01",
+            "name": "[variables('connectionsEventGridName')]",
+            "location": "[variables('location')]",
+            "kind": "V1",
+            "properties": {
+                "api": {
+                    "name": "azureeventgrid",
+                    "displayName": "Azure Event Grid",
+                    "description": "Azure Event Grid is an eventing backplane that enables event based programing with pub/sub semantics and reliable distribution & delivery for all services in Azure as well as third parties.",
+                    "iconUri": "https://connectoricons-prod.azureedge.net/releases/v1.0.1538/1.0.1538.2619/azureeventgrid/icon.png",
+                    "brandColor": "#0072c6",
+                    "id": "[subscriptionResourceId('Microsoft.Web/locations/managedApis', resourceGroup().location, 'azureeventgrid')]"                    
+                },
+                "parameterValueType": "Alternative"
+            }
+        },
+        {
+            "type": "Microsoft.Logic/workflows",
+            "apiVersion": "2017-07-01",
+            "name": "[variables('logicAppsName')]",
+            "location": "[variables('location')]",
+            "dependsOn": [
+                "[resourceId(variables('eventGridType'), variables('eventGridTopicName'))]",
+                "[resourceId('Microsoft.Web/connections', variables('connectionsEventGridName'))]",
+                "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('logicAppsNameUserIdentityName'))]"
+            ],
+            "identity": {
+                "type": "UserAssigned",
+                "userAssignedIdentities": {
+                    "[concat('/subscriptions/', variables('subscriptionId'), '/resourceGroups/', variables('resourceGroupName'), '/providers/Microsoft.ManagedIdentity/userAssignedIdentities/', variables('logicAppsNameUserIdentityName'))]": {}
+                }
+            },
+            "properties": {
+                "state": "Enabled",
+                "definition": {
+                    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+                    "contentVersion": "1.0.0.0",
+                    "parameters": {
+                        "$connections": {
+                            "defaultValue": {},
+                            "type": "Object"
+                        }
+                    },
+                    "triggers": {
+                        "When_GCEvent_occures": {
+                            "splitOn": "@triggerBody()",
+                            "type": "ApiConnectionWebhook",
+                            "inputs": {
+                                "body": {
+                                    "properties": {
+                                        "destination": {
+                                            "endpointType": "webhook",
+                                            "properties": {
+                                                "endpointUrl": "@{listCallbackUrl()}"
+                                            }
+                                        },
+                                        "filter": {
+                                            "includedEventTypes": [
+                                                "conversation.email"
+                                            ]
+                                        },
+                                        "topic": "[resourceId('Microsoft.EventGrid/topics', variables('eventGridTopicName'))]"
+                                    }
+                                },
+                                "host": {
+                                    "connection": {
+                                        "name": "@parameters('$connections')['azureeventgrid']['connectionId']"
+                                    }
+                                },
+                                "path": "[concat('/subscriptions/@{encodeURIComponent(''', subscription().subscriptionId, ''')}/providers/@{encodeURIComponent(''Microsoft.EventGrid.Topics'')}/resource/eventSubscriptions')]",
+                                "queries": {
+                                    "x-ms-api-version": "2017-06-15-preview"
+                                }
+                            }
+                        }
+                    },
+                    "actions": {
+                        "Parse_JSON_to_Email_Conversation": {
+                            "runAfter": {},
+                            "type": "ParseJson",
+                            "inputs": {
+                                "content": "@triggerBody()?['data']",
+                                "schema": {
+                                    "properties": {
+                                        "Address": {
+                                            "type": ["string","null"]
+                                        },
+                                        "AgentId": {
+                                            "type": ["string","null"]
+                                        },
+                                        "ConnectedTime": {
+                                            "type": ["string","null"]
+                                        },
+                                        "ConversationId": {
+                                            "type": "string"
+                                        },
+                                        "Direction": {
+                                            "type": ["string","null"]
+                                        },
+                                        "DisconnectType": {
+                                            "type": ["string","null"]
+                                        },
+                                        "EndAcwTime": {
+                                            "type": ["string","null"]
+                                        },
+                                        "EndTime": {
+                                            "type": ["string","null"]
+                                        },
+                                        "Held": {
+                                            "type": "boolean"
+                                        },
+                                        "Id": {
+                                            "type": "string"
+                                        },
+                                        "MessageId": {
+                                            "type": ["string","null"]
+                                        },
+                                        "Name": {
+                                            "type": ["string","null"]
+                                        },
+                                        "Provider": {
+                                            "type": ["string","null"]
+                                        },
+                                        "Purpose": {
+                                            "type": ["string","null"]
+                                        },
+                                        "QueueId": {
+                                            "type": ["string","null"]
+                                        },
+                                        "Spam": {
+                                            "type": "boolean"
+                                        },
+                                        "StartAcwTime": {
+                                            "type": ["string","null"]
+                                        },
+                                        "StartHoldTime": {
+                                            "type": ["string","null"]
+                                        },
+                                        "StartTime": {
+                                            "type": ["string","null"]
+                                        },
+                                        "State": {
+                                            "type": ["string","null"]
+                                        },
+                                        "Subject": {
+                                            "type": ["string","null"]
+                                        },
+                                        "WrapupId": {
+                                            "type": ["string","null"]
+                                        },
+                                        "WrapupPrompt": {},
+                                        "WrapupRequired": {
+                                            "type": "boolean"
+                                        },
+                                        "WrapupTimeoutMs": {}
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "outputs": {}
+                },
+                "parameters": {
+                    "$connections": {
+                        "value": {
+                            "azureeventgrid": {
+                                "connectionId": "[concat('/subscriptions/', subscription().subscriptionId, '/resourceGroups/', resourceGroup().name, '/providers/Microsoft.Web/connections/', variables('connectionsEventGridName'))]",
+                                "connectionName": "[variables('connectionsEventGridName')]",
+                                "connectionProperties": {
+                                    "authentication": {
+                                        "identity": "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('logicAppsNameUserIdentityName'))]",
+                                        "type": "ManagedServiceIdentity"
+                                    }
+                                },
+                                "id": "[concat('/subscriptions/', variables('subscriptionId'),'/providers/Microsoft.Web/locations/', variables('location'), '/managedApis/azureeventgrid')]"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "name": "[variables('logicAppsSubscriptionName')]",
+            "scope": "[format('Microsoft.EventGrid/topics/{0}', variables('eventGridTopicName'))]",
+            "type": "Microsoft.EventGrid/eventSubscriptions",
+            "location": "[variables('location')]",
+            "apiVersion": "2020-04-01-preview",
+            "properties": {
+                "destination": {
+                    "endpointType": "WebHook",
+                    "properties": {
+                        "endpointUrl": "[listCallbackUrl(variables('TargetLogicApp').triggerId, '2019-05-01').value]"
+                    }
+                },
+                "filter": {
+                    "includedEventTypes": [
+                        "conversation.email"
+                    ]
+                }
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/connections', variables('connectionsEventGridName'))]"
+            ]
+        }
+    ],
+    "outputs": {
+        "EvendGridEndpoint": {
+            "type": "string",
+            "value": "[reference(resourceId(variables('eventGridType'), variables('eventGridTopicName')), variables('eventgridApiVersion')).endpoint]"
+        },
+        "EvendGridKey": {
+            "type": "string",
+            "value": "[listKeys(resourceId(variables('eventGridType'), variables('eventGridTopicName')), variables('eventgridApiVersion')).key1]"
+        }
+    }
+}
