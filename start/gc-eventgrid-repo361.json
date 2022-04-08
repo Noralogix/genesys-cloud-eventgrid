@@ -107,7 +107,7 @@
                                         },
                                         "filter": {
                                             "includedEventTypes": [
-                                                "conversation.email"
+                                                "queues.conversations.emails"
                                             ]
                                         },
                                         "topic": "[resourceId('Microsoft.EventGrid/topics', variables('eventGridTopicName'))]"
@@ -246,7 +246,7 @@
                 },
                 "filter": {
                     "includedEventTypes": [
-                        "conversation.email"
+                        "queues.conversations.emails"
                     ]
                 }
             },
