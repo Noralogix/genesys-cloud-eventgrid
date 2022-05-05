@@ -5,7 +5,7 @@ This temlate will create
 * Resource Group
 * API Connection. Connection between Event Grid Topic and Logic app.
 * Event Grid Topic.
-* Logic app with subscribtion on **conversation.email** with initial steps. 
+* Logic app with subscribtion on **queues.conversations.emails** with initial steps. 
 * Managed Identity. Secure access between Logic app and API Connection.
 
 [![Deploy To Azure](https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/1-CONTRIBUTION-GUIDE/images/deploytoazure.svg?sanitize=true)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FNoralogix%2Fgenesyscloud-eventgrid%2Fmain%2Fstart%2Fgc-eventgrid-repo361.json)
