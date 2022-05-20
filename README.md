@@ -19,6 +19,25 @@ There are five concepts in Azure Event Grid that let you get going:
 # What can a client do with Event Grid?
 Event Grid connects Genesys Cloud notifications and event handlers in Azure.
 
+# Noralogix Event Grid topics
+* For Queues
+- analytics.queues.observations
+- queues.conversations.emails
+- queues.conversations
+- queues.conversations.chats
+- queues.conversations.calls
+- queues.conversations.callbacks
+- users.conversations.calls
+- queues.users
+
+* For Agents
+- analytics.users.aggregates
+- analytics.users.aggregates
+- users.presence
+- users.activity
+- users.routingStatus
+
+
 Initial Azure [deployment](https://github.com/Noralogix/genesyscloud-eventgrid/tree/main/start) 
 
 For more information please contact: [contactus@noralogix.com](mailto:contactus@noralogix.com)

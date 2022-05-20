@@ -1,0 +1,188 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "logicAppName": {
+            "defaultValue": "queues-analytics-observations",
+            "type": "String"
+        },
+        "eventGridTopicName": {
+            "defaultValue": "",
+            "type": "String",
+            "metadata": {
+                "description": "Use name of the Event Grid Topic from your resource group."
+            }
+        },
+        "userIdentityName": {
+            "defaultValue": "",
+            "type": "String",
+            "metadata": {
+                "description": "Use name of the Managed Identity from your resource group."
+            }
+        }
+    },
+    "variables": {
+        "uniqueId": "[take(uniqueString(resourceGroup().id), 3)]",
+        "logicAppSubscriptionName": "[concat('evgt-subscr-', parameters('logicAppName'), variables('uniqueId'))]",
+        "connectionEventGridName": "[concat('evgt-conn-', parameters('logicAppName'), variables('uniqueId'))]",
+        "subscriptionId": "[subscription().subscriptionId]",
+        "resourceGroupName": "[resourceGroup().name]",
+        "location": "[resourceGroup().location]",
+        "logicAppName": "[concat('lapp-', parameters('logicAppName'), variables('uniqueId'))]",
+        "targetLogicApp": {
+            "triggerId": "[resourceId('Microsoft.Logic/workflows/triggers', variables('logicAppName'), 'Analytics_Queues_Observations_Event')]"
+        }
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Web/connections",
+            "apiVersion": "2016-06-01",
+            "name": "[variables('connectionEventGridName')]",
+            "location": "[variables('location')]",
+            "kind": "V1",
+            "properties": {
+                "api": {
+                    "name": "azureeventgrid",
+                    "displayName": "Azure Event Grid",
+                    "description": "Azure Event Grid is an eventing backplane that enables event based programing with pub/sub semantics and reliable distribution & delivery for all services in Azure as well as third parties.",
+                    "iconUri": "https://connectoricons-prod.azureedge.net/releases/v1.0.1538/1.0.1538.2619/azureeventgrid/icon.png",
+                    "brandColor": "#0072c6",
+                    "id": "[subscriptionResourceId('Microsoft.Web/locations/managedApis', resourceGroup().location, 'azureeventgrid')]"
+                },
+                "parameterValueType": "Alternative"
+            }
+        },
+        {
+            "name": "[variables('logicAppSubscriptionName')]",
+            "scope": "[format('Microsoft.EventGrid/topics/{0}', parameters('eventGridTopicName'))]",
+            "type": "Microsoft.EventGrid/eventSubscriptions",
+            "location": "[variables('location')]",
+            "apiVersion": "2020-04-01-preview",
+            "properties": {
+                "destination": {
+                    "endpointType": "WebHook",
+                    "properties": {
+                        "endpointUrl": "[listCallbackUrl(variables('TargetLogicApp').triggerId, '2019-05-01').value]"
+                    }
+                },
+                "filter": {
+                    "includedEventTypes": [
+                        "analytics.queues.observations"
+                    ]
+                }
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Logic/workflows', variables('logicAppName'))]",
+                "[resourceId('Microsoft.Web/connections', variables('connectionEventGridName'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Logic/workflows",
+            "apiVersion": "2017-07-01",
+            "name": "[variables('logicAppName')]",
+            "location": "[variables('location')]",
+            "identity": {
+                "type": "UserAssigned",
+                "userAssignedIdentities": {
+                    "[concat('/subscriptions/', variables('subscriptionId'), '/resourceGroups/', variables('resourceGroupName'), '/providers/Microsoft.ManagedIdentity/userAssignedIdentities/', parameters('userIdentityName'))]": {}
+                }
+            },
+            "properties": {
+                "state": "Enabled",
+                "definition": {
+                    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+                    "actions": {
+                        "Analytics_Queues_Observations": {
+                            "inputs": {
+                                "content": "@triggerBody()?['data']",
+                                "schema": {
+                                    "properties": {
+                                        "Date": {
+                                            "type": "string"
+                                        },
+                                        "MediaType": {
+                                            "type": "string"
+                                        },
+                                        "QueueId": {
+                                            "type": "string"
+                                        },
+                                        "nAnswered": {
+                                            "type": "integer"
+                                        },
+                                        "nHandled": {
+                                            "type": "integer"
+                                        },
+                                        "nOffered": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            },
+                            "runAfter": {},
+                            "type": "ParseJson"
+                        }
+                    },
+                    "contentVersion": "1.0.0.0",
+                    "outputs": {},
+                    "parameters": {
+                        "$connections": {
+                            "defaultValue": {},
+                            "type": "Object"
+                        }
+                    },
+                    "triggers": {
+                        "Analytics_Queues_Observations_Event": {
+                            "inputs": {
+                                "body": {
+                                    "properties": {
+                                        "destination": {
+                                            "endpointType": "webhook",
+                                            "properties": {
+                                                "endpointUrl": "@{listCallbackUrl()}"
+                                            }
+                                        },
+                                        "filter": {
+                                            "includedEventTypes": [
+                                                "analytics.queues.observations"
+                                            ]
+                                        },
+                                        "topic": "/subscriptions/167c9707-673c-4ad5-8c5e-995fcc84f98e/resourceGroups/rg-democonv1/providers/Microsoft.EventGrid/topics/eventgridrepo361d1-evgt-vx6vxr"
+                                    }
+                                },
+                                "host": {
+                                    "connection": {
+                                        "name": "@parameters('$connections')['azureeventgrid']['connectionId']"
+                                    }
+                                },
+                                "path": "/subscriptions/@{encodeURIComponent('167c9707-673c-4ad5-8c5e-995fcc84f98e')}/providers/@{encodeURIComponent('Microsoft.EventGrid.Topics')}/resource/eventSubscriptions",
+                                "queries": {
+                                    "x-ms-api-version": "2017-06-15-preview"
+                                }
+                            },
+                            "splitOn": "@triggerBody()",
+                            "type": "ApiConnectionWebhook"
+                        }
+                    }
+                },
+                "parameters": {
+                    "$connections": {
+                        "value": {
+                            "azureeventgrid": {
+                                "connectionId": "[concat('/subscriptions/', subscription().subscriptionId, '/resourceGroups/', resourceGroup().name, '/providers/Microsoft.Web/connections/', variables('connectionEventGridName'))]",
+                                "connectionName": "[variables('connectionEventGridName')]",
+                                "id": "[concat('/subscriptions/', variables('subscriptionId'),'/providers/Microsoft.Web/locations/', variables('location'), '/managedApis/azureeventgrid')]",
+                                "connectionProperties": {
+                                    "authentication": {
+                                        "identity": "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('userIdentityName'))]",
+                                        "type": "ManagedServiceIdentity"
+                                    }
+                                } 
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    ]
+}
