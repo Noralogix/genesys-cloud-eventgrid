@@ -15,14 +15,14 @@
             "type": "String"
         },
         "conversation_wait_count": {
-            "defaultValue": "2",
+            "defaultValue": 2,
             "type": "int",
             "metadata": {
                 "description": "Amount of wait conversations in the queue."
             }
         },
         "conversation_wait_time": {
-            "defaultValue": "2",
+            "defaultValue": 2,
             "type": "int",
             "metadata": {
                 "description": "Conversation wait time in seconds."
