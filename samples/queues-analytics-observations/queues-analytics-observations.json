@@ -107,13 +107,55 @@
                                             "type": "string"
                                         },
                                         "nAnswered": {
-                                            "type": "integer"
+                                            "properties": {
+                                                "count": {
+                                                    "type": "integer"
+                                                },
+                                                "max": {
+                                                    "type": "integer"
+                                                },
+                                                "min": {
+                                                    "type": "integer"
+                                                },
+                                                "sum": {
+                                                    "type": "integer"
+                                                }
+                                            },
+                                            "type": "object"
                                         },
                                         "nHandled": {
-                                            "type": "integer"
+                                            "properties": {
+                                                "count": {
+                                                    "type": "integer"
+                                                },
+                                                "max": {
+                                                    "type": "integer"
+                                                },
+                                                "min": {
+                                                    "type": "integer"
+                                                },
+                                                "sum": {
+                                                    "type": "integer"
+                                                }
+                                            },
+                                            "type": "object"
                                         },
                                         "nOffered": {
-                                            "type": "integer"
+                                            "properties": {
+                                                "count": {
+                                                    "type": "integer"
+                                                },
+                                                "max": {
+                                                    "type": "integer"
+                                                },
+                                                "min": {
+                                                    "type": "integer"
+                                                },
+                                                "sum": {
+                                                    "type": "integer"
+                                                }
+                                            },
+                                            "type": "object"
                                         }
                                     },
                                     "type": "object"
@@ -177,7 +219,7 @@
                                         "identity": "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('userIdentityName'))]",
                                         "type": "ManagedServiceIdentity"
                                     }
-                                } 
+                                }
                             }
                         }
                     }
