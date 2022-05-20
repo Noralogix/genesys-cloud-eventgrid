@@ -1,4 +1,4 @@
-# Queue Call Conversations Wait
+# Queues Analytics Observations
 
 Initial Azure [deployment](https://github.com/Noralogix/genesyscloud-eventgrid/tree/main/start) 
 
