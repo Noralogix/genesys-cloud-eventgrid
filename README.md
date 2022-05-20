@@ -21,7 +21,7 @@ Event Grid connects Genesys Cloud notifications and event handlers in Azure.
 
 # Noralogix Event Grid topics
 #### For Queues
-- analytics.queues.observations
+- [analytics.queues.observations](https://github.com/Noralogix/genesyscloud-eventgrid/tree/main/samples/queues-analytics-observations)
 - queues.conversations.emails
 - queues.conversations
 - queues.conversations.chats
