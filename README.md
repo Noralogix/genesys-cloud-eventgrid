@@ -29,14 +29,13 @@ Event Grid connects Genesys Cloud notifications and event handlers in Azure.
 - queues.conversations.callbacks
 - users.conversations.calls
 - queues.users
+- [queues.conversations.calls.completed](https://www.noralogix.com/blog/genesys-cloud-calls-completed-events)
 
 #### For Agents
-- analytics.users.aggregates
 - analytics.users.aggregates
 - users.presence
 - users.activity
 - users.routingStatus
-
 
 Initial Azure [deployment](https://github.com/Noralogix/genesyscloud-eventgrid/tree/main/start) 
 
